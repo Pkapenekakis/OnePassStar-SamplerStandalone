@@ -7,16 +7,16 @@ import java.util.Objects;
 public final class NodeKey implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    public final String stream;
+    public final String layer;
     public final String value;
     private final int hash; // cached
 
     public NodeKey(String layer, String value){
-        this.stream = Objects.requireNonNull(layer, "stream").trim();
+        this.layer = Objects.requireNonNull(layer, "stream").trim();
         this.value = Objects.requireNonNull(value, "value").trim();
-        if (this.stream.isEmpty() || this.value.isEmpty())
+        if (this.layer.isEmpty() || this.value.isEmpty())
             throw new IllegalArgumentException("layer/value must be non-empty");
-        this.hash = 31 * this.stream.hashCode() + this.value.hashCode();
+        this.hash = 31 * this.layer.hashCode() + this.value.hashCode();
     }
 
     /** Convenience: build a composite value from parts (safe, collision-free). */
@@ -29,10 +29,10 @@ public final class NodeKey implements Serializable {
     @Override public boolean equals(Object o){
         if (!(o instanceof NodeKey)) return false;
         NodeKey k = (NodeKey) o;
-        return stream.equals(k.stream) && value.equals(k.value);
+        return layer.equals(k.layer) && value.equals(k.value);
     }
 
-    @Override public String toString(){ return stream + ":" + value; }
+    @Override public String toString(){ return layer + ":" + value; }
 
     //If we need a composite key we need to encode in order to avoid delimiter bugs
     private static String encode(Object... parts){

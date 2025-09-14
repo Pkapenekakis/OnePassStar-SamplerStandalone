@@ -14,29 +14,29 @@ public class ChildrenIndex {
         public final NodeKey child;
         public final double edgeWeight;
         public Child(NodeKey child, double edgeWeight) {
-            this.child = Objects.requireNonNull(child, "child");
+            this.child = Objects.requireNonNull(child, "Child should not be null");
             this.edgeWeight = edgeWeight;
         }
     }
 
-    private final ConcurrentHashMap<NodeKey, List<Child>> fanout = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<NodeKey, List<Child>> IndexHashMap = new ConcurrentHashMap<>();
 
     /** Add an edge parent -> child. */
     public void addEdge(NodeKey parent, NodeKey child, double edgeWeight) {
-        fanout.computeIfAbsent(parent, k -> Collections.synchronizedList(new ArrayList<>()))
+        IndexHashMap.computeIfAbsent(parent, k -> Collections.synchronizedList(new ArrayList<>()))
                 .add(new Child(child, edgeWeight));
     }
 
     /** All children of a parent (empty list if none). */
-    public List<Child> children(NodeKey parent) {
-        return fanout.getOrDefault(parent, Collections.emptyList());
+    public List<Child> getChildren(NodeKey parent) {
+        return IndexHashMap.getOrDefault(parent, Collections.emptyList());
     }
 
     /** Live view for iteration/serialization. */
-    public Map<NodeKey, List<Child>> snapshot() { return fanout; }
+    public Map<NodeKey, List<Child>> snapshot() { return IndexHashMap; }
 
     /** Merge another fanout index (union of edges). */
     public void mergeFrom(ChildrenIndex other) {
-        other.fanout.forEach((p, list) -> list.forEach(c -> addEdge(p, c.child, c.edgeWeight)));
+        other.IndexHashMap.forEach((p, list) -> list.forEach(c -> addEdge(p, c.child, c.edgeWeight)));
     }
 }
