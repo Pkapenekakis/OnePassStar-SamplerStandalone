@@ -63,10 +63,37 @@ public final class DAG {
 
             cIndex.addEdge(parent, child, t.edgeWeight);
 
+            //
             nodesByLayer.computeIfAbsent(parent.layer, k -> new HashSet<>()).add(parent);
             nodesByLayer.computeIfAbsent(child.layer,  k -> new HashSet<>()).add(child);
         }
 
         return new DAG(layersLeftToRight, cIndex, nodesByLayer);
+    }
+
+    /** Declared layer order (left→right). */
+    public List<String> layersLeftToRight() {
+        return layersLeftToRight;
+    }
+
+    /** Reverse order (right→left) for bottom-up group-weight computation. */
+    public List<String> layersRightToLeft() {
+        ArrayList<String> r = new ArrayList<>(layersLeftToRight);
+        Collections.reverse(r);
+        return r;
+    }
+
+    /** Parent→children adjacency used by Phase-1 & Phase-2. */
+    public ChildrenIndex children() {
+        return children;
+    }
+
+    /** Nodes present in the DAG grouped by layer. */
+    public Map<String, Set<NodeKey>> nodesByLayer() {
+        return nodesByLayer;
+    }
+
+    @Override public String toString() {
+        return "DAG{layers=" + layersLeftToRight + ", layersWithNodes=" + nodesByLayer.keySet() + "}";
     }
 }
