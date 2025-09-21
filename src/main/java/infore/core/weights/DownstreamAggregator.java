@@ -7,14 +7,14 @@ import infore.core.graph.ChildrenIndex;
  * For Phase-1 rule, use SUM_CHILDREN: combine(edge, childW) = childW; reduce = sum.
  */
 public interface DownstreamAggregator {
-    /** How an edge contributes from child to parent (given child's already-computed weight). */
-    double combine(ChildrenIndex.Child edgeToChild, double childWeight);
+    /** How much this child contributes to its parent (given the child's already-computed weight). */
+    double childContribution(ChildrenIndex.Child edgeToChild, double childWeight);
 
-    /** How to aggregate multiple children (default: sum). */
-    default double reduce(double a, double b) { return a + b; }
+    /** Accumulate many child contributions into one total (default: sum). */
+    default double accumulate(double total, double nextContribution) { return total + nextContribution; }
 
-    /** Aggregator for your slide: parent weight sums children's weights (ignore edgeWeight). */
+    /** W(parent) = Wnode + Σ Weight(child) */
     DownstreamAggregator SUM_CHILDREN = new DownstreamAggregator() {
-        @Override public double combine(ChildrenIndex.Child e, double childWeight) { return childWeight; }
+        @Override public double childContribution(ChildrenIndex.Child ch, double childWeight) { return childWeight; }
     };
 }

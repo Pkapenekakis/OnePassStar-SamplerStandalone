@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.function.Function;
 
 /**
- * Bottom-up computation of group weights per your rule:
+ * Bottom-up computation of group weights:
  *   W(u) = Wnode(u) + Σ_{v in children(u)} W(v)
  * with a leaf bonus (+leafBase) when a node has no children.
  *
@@ -20,43 +20,47 @@ public class GroupWeightsCalculator {
      * Compute group weights.
      *
      * @param layersRightToLeft   e.g., ["C","B","A"]
-     * @param children            fanouts (parent -> children)
+     * @param childrenIndex       fanouts (parent -> childrenIndex)
      * @param priorFn             Wnode(u) provider; return 0.0 if you have no priors
-     * @param leafBase            bonus for leaves (use 1.0 to match your slides)
+     * @param leafBase            Set as 1.0 based on the thesis Paper
      * @param agg                 downstream aggregator (use DownstreamAggregator.SUM_CHILDREN)
      * @return NodeWeightIndex filled with W(u)
      */
     public static NodeWeightIndex compute(
             List<String> layersRightToLeft,
-            ChildrenIndex children,
+            ChildrenIndex childrenIndex,
             Function<NodeKey, Double> priorFn,
             double leafBase,
             DownstreamAggregator agg) {
 
-        NodeWeightIndex W = new NodeWeightIndex();
+        NodeWeightIndex weightIndex = new NodeWeightIndex();
 
-        // Collect nodes per layer from fanouts (parents and children).
+        //Collect nodes per layer from fanouts (parents and childrenIndex).
         Map<String, Set<NodeKey>> nodesByLayer = new HashMap<>();
-        children.snapshot().forEach((p, list) -> {
-            nodesByLayer.computeIfAbsent(p.stream, k -> new HashSet<>()).add(p);
+        childrenIndex.snapshot().forEach((nKey, list) -> {
+            nodesByLayer.computeIfAbsent(nKey.layer, k -> new HashSet<>()).add(nKey);
             for (ChildrenIndex.Child c : list)
-                nodesByLayer.computeIfAbsent(c.child.stream, k -> new HashSet<>()).add(c.child);
+                nodesByLayer.computeIfAbsent(c.child.layer, k -> new HashSet<>()).add(c.child);
         });
 
         for (String layer : layersRightToLeft) {
-            for (NodeKey u : nodesByLayer.getOrDefault(layer, Collections.emptySet())) {
-                List<ChildrenIndex.Child> fan = children.children(u);
-                double accum = 0.0;
-                for (ChildrenIndex.Child ch : fan) {
-                    double term = agg.combine(ch, W.get(ch.child));
-                    accum = agg.reduce(accum, term);
+            for (NodeKey nKey : nodesByLayer.getOrDefault(layer, Collections.emptySet())) {
+                List<ChildrenIndex.Child> childList = childrenIndex.getChildren(nKey);
+                double nodeTotalWeight = 0.0;
+
+                //For all the children of this parent
+                for (ChildrenIndex.Child ch : childList) {
+                    //Change the aggregator instead of the loop with this implementation
+                    double childWeight = agg.childContribution(ch, weightIndex.get(ch.child));
+                    nodeTotalWeight = agg.accumulate(nodeTotalWeight, childWeight);
                 }
-                double prior = priorFn.apply(u);
-                double leaf = fan.isEmpty() ? leafBase : 0.0;
-                W.set(u, prior + accum + leaf);
+
+                double prior = priorFn.apply(nKey);
+                double leaf = childList.isEmpty() ? leafBase : 0.0;
+                weightIndex.set(nKey, prior + nodeTotalWeight + leaf);
             }
         }
-        return W;
+        return weightIndex;
     }
 
     /** Convenience overload when priors are provided as a map. */
