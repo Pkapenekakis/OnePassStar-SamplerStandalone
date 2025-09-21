@@ -8,7 +8,7 @@ public final class StreamTuple {
     public final double edgeWeight; //May be useless, could be used in the Bayesian network
 
 
-    public StreamTuple(NodeKey parent, NodeKey child, double edgeWeight, String stream) {
+    public StreamTuple(NodeKey parent, NodeKey child, double edgeWeight) {
         this.leftLayer = Objects.requireNonNull(parent, "Left Layer must not be null");
         this.rightLayer  = Objects.requireNonNull(child, "Right Layer must not be null");
         if (!Double.isFinite(edgeWeight) || edgeWeight < 0.0)
