@@ -6,18 +6,22 @@
   <groupId>infore</groupId>
   <artifactId>SDE</artifactId>
   <version>1.0.1-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
 
   <name>SDE</name>
   <url>http://maven.apache.org</url>
+    <modules>
+        <module>onepass-standalone</module>
+    </modules>
 
-  <properties>
+    <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <flink.version>1.9.3</flink.version>
     <java.version>1.8</java.version>
     <scala.binary.version>2.11</scala.binary.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
+    <junit.jupiter.version>5.9.3</junit.jupiter.version>
   </properties>
 
   <repositories>
@@ -175,16 +179,38 @@
       <scope>runtime</scope>
     </dependency>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.12</version>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${junit.jupiter.version}</version>
       <scope>test</scope>
     </dependency>
-
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>${junit.jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- Optional: parameterized tests -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <version>${junit.jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
     <plugins>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+        <configuration>
+          <!-- Needed for older Java / mixed deps -->
+          <useModulePath>false</useModulePath>
+        </configuration>
+      </plugin>
 
       <!-- Java Compiler -->
 
